@@ -25,10 +25,15 @@ import {
   StatCard
 } from '../components/ui'
 import type { Employee, Invoice, LeaveRequest, Product } from '../lib/types'
+import EmployeeDashboard from './employee/EmployeeDashboard'
 
 export default function Dashboard() {
-  const { user } = useAuth()
+  const { user, can } = useAuth()
   const { isEnabled } = useModules()
+
+  // A user attached to an employee record who can't see company analytics gets
+  // their personal home instead of the executive dashboard.
+  if (user?.linkedEmployeeId && !can('analytics', 'view')) return <EmployeeDashboard />
 
   const ms = monthlySales()
   const thisM = ms[ms.length - 1]

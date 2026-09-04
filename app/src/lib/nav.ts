@@ -2,7 +2,8 @@ export interface NavItem {
   label: string
   path: string
   icon: string
-  moduleId: string | null // null = always visible (system page)
+  moduleId: string | null // null = not gated by a module
+  adminOnly?: boolean // only the Company Owner / Super Admin sees it
 }
 
 export interface NavSection {
@@ -90,19 +91,18 @@ export const ADMIN_NAV: NavSection[] = [
     title: 'System',
     items: [
       { label: 'Notifications', path: '/notifications', icon: 'Bell', moduleId: null },
-      { label: 'Modules', path: '/admin/modules', icon: 'ToggleRight', moduleId: null },
-      { label: 'Users', path: '/admin/users', icon: 'UserCog', moduleId: null },
-      { label: 'Roles & Permissions', path: '/admin/roles', icon: 'KeyRound', moduleId: null },
-      { label: 'Company Profile', path: '/admin/company', icon: 'Building2', moduleId: null },
-      { label: 'Settings', path: '/admin/settings', icon: 'Settings', moduleId: null },
-      { label: 'Audit Log', path: '/admin/audit', icon: 'History', moduleId: null }
+      { label: 'Modules', path: '/admin/modules', icon: 'ToggleRight', moduleId: null, adminOnly: true },
+      { label: 'Users', path: '/admin/users', icon: 'UserCog', moduleId: null, adminOnly: true },
+      { label: 'Roles & Permissions', path: '/admin/roles', icon: 'KeyRound', moduleId: null, adminOnly: true },
+      { label: 'Company Profile', path: '/admin/company', icon: 'Building2', moduleId: null, adminOnly: true },
+      { label: 'Settings', path: '/admin/settings', icon: 'Settings', moduleId: null, adminOnly: true },
+      { label: 'Audit Log', path: '/admin/audit', icon: 'History', moduleId: null, adminOnly: true }
     ]
   }
 ]
 
-// ---- Employee self-service portal ----
-export const EMPLOYEE_NAV: NavItem[] = [
-  { label: 'Dashboard', path: '/', icon: 'LayoutDashboard', moduleId: null },
+// ---- "My Workspace" — self-service, shown to any user linked to an employee record ----
+export const MY_WORKSPACE_NAV: NavItem[] = [
   { label: 'My Attendance', path: '/me/attendance', icon: 'CalendarCheck', moduleId: 'attendance' },
   { label: 'My Leave', path: '/me/leave', icon: 'CalendarOff', moduleId: 'leave' },
   { label: 'My Payslips', path: '/me/payslips', icon: 'Wallet', moduleId: 'payroll' },

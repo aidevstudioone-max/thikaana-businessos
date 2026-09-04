@@ -4,7 +4,7 @@
 // No other file in the app should touch localStorage directly.
 
 const PREFIX = 'tbos:'
-export const SCHEMA_VERSION = 5
+export const SCHEMA_VERSION = 7
 
 export function load<T>(key: string, fallback: T): T {
   try {

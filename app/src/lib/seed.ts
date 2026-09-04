@@ -1435,14 +1435,18 @@ export function seedAll(): void {
   // =====================================================================
   // Users (demo logins) — one per role, employee linked to a real record
   // =====================================================================
-  const empForLogin = activeEmployees.find((e) => e.status === 'ACTIVE') ?? employees[5]
+  // Link each demo login to a real employee record so everyone (not just the
+  // Employee role) gets the "My Workspace" self-service section.
+  const empInDept = (deptName: string) =>
+    activeEmployees.find((e) => e.departmentId === deptByName(deptName).id && e.status === 'ACTIVE') ?? activeEmployees[0]
+  const empForLogin = empInDept('Warehouse & Logistics')
   const users: User[] = [
     { id: genId('usr'), name: 'Thikaana Platform', username: 'superadmin', email: 'super@thikaana.example', mobile: '9000000001', password: 'super123', roleId: 'role_super_admin', status: 'ACTIVE', createdAt: isoDaysAgo(900) },
-    { id: genId('usr'), name: 'Rajesh Agarwal', username: 'owner', email: 'owner@shaktitraders.example', mobile: '9000000002', password: 'owner123', roleId: 'role_owner', status: 'ACTIVE', createdAt: isoDaysAgo(800) },
-    { id: genId('usr'), name: 'Sunita Rao', username: 'manager', email: 'manager@shaktitraders.example', mobile: '9000000003', password: 'manager123', roleId: 'role_manager', status: 'ACTIVE', createdAt: isoDaysAgo(700) },
-    { id: genId('usr'), name: 'Neha Gupta', username: 'hr', email: 'hr@shaktitraders.example', mobile: '9000000004', password: 'hr123', roleId: 'role_hr', status: 'ACTIVE', createdAt: isoDaysAgo(650) },
-    { id: genId('usr'), name: 'Prakash Menon', username: 'accountant', email: 'accounts@shaktitraders.example', mobile: '9000000005', password: 'account123', roleId: 'role_accountant', status: 'ACTIVE', createdAt: isoDaysAgo(600) },
-    { id: genId('usr'), name: 'Amit Sharma', username: 'sales', email: 'sales1@shaktitraders.example', mobile: '9000000006', password: 'sales123', roleId: 'role_sales', status: 'ACTIVE', createdAt: isoDaysAgo(500) },
+    { id: genId('usr'), name: 'Rajesh Agarwal', username: 'owner', email: 'owner@shaktitraders.example', mobile: '9000000002', password: 'owner123', roleId: 'role_owner', linkedEmployeeId: md.id, status: 'ACTIVE', createdAt: isoDaysAgo(800) },
+    { id: genId('usr'), name: empInDept('Management').name, username: 'manager', email: 'manager@shaktitraders.example', mobile: '9000000003', password: 'manager123', roleId: 'role_manager', linkedEmployeeId: empInDept('Management').id, status: 'ACTIVE', createdAt: isoDaysAgo(700) },
+    { id: genId('usr'), name: empInDept('Human Resources').name, username: 'hr', email: 'hr@shaktitraders.example', mobile: '9000000004', password: 'hr123', roleId: 'role_hr', linkedEmployeeId: empInDept('Human Resources').id, status: 'ACTIVE', createdAt: isoDaysAgo(650) },
+    { id: genId('usr'), name: empInDept('Accounts & Finance').name, username: 'accountant', email: 'accounts@shaktitraders.example', mobile: '9000000005', password: 'account123', roleId: 'role_accountant', linkedEmployeeId: empInDept('Accounts & Finance').id, status: 'ACTIVE', createdAt: isoDaysAgo(600) },
+    { id: genId('usr'), name: empInDept('Sales').name, username: 'sales', email: 'sales1@shaktitraders.example', mobile: '9000000006', password: 'sales123', roleId: 'role_sales', linkedEmployeeId: empInDept('Sales').id, status: 'ACTIVE', createdAt: isoDaysAgo(500) },
     { id: genId('usr'), name: empForLogin.name, username: 'employee', email: 'employee@shaktitraders.example', mobile: '9000000007', password: 'employee123', roleId: 'role_employee', linkedEmployeeId: empForLogin.id, status: 'ACTIVE', createdAt: isoDaysAgo(400) }
   ]
   saveAll(COLLECTIONS.users, users)

@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import * as Icons from 'lucide-react'
-import { ADMIN_NAV } from '../lib/nav'
+import { ADMIN_NAV, MY_WORKSPACE_NAV, type NavSection } from '../lib/nav'
 import { useAuth } from '../context/AuthContext'
 import { useModules } from '../context/ModuleContext'
 import { COLLECTIONS, getAll, load } from '../lib/db'
@@ -23,7 +23,7 @@ const navItemCls = (isActive: boolean) =>
   }`
 
 export default function Layout() {
-  const { user, role, logout } = useAuth()
+  const { user, role, logout, can, isSuperAdmin } = useAuth()
   const { isEnabled } = useModules()
   const navigate = useNavigate()
   const { pathname } = useLocation()
@@ -33,10 +33,22 @@ export default function Layout() {
   const company = load<Company>(COLLECTIONS.company, {} as Company)
   const unread = getAll<Notification>(COLLECTIONS.notifications).filter((n) => !n.read).length
 
-  const visibleSections = ADMIN_NAV.map((section) => ({
+  const isAdminUser = role?.id === 'role_owner' || isSuperAdmin
+
+  const visibleSections: NavSection[] = ADMIN_NAV.map((section) => ({
     ...section,
-    items: section.items.filter((item) => item.moduleId === null || isEnabled(item.moduleId))
+    items: section.items.filter((item) => {
+      if (item.adminOnly && !isAdminUser) return false
+      if (item.moduleId === null) return true
+      return isEnabled(item.moduleId) && can(item.moduleId, 'view')
+    })
   })).filter((s) => s.items.length > 0)
+
+  // Self-service section for anyone attached to an employee record.
+  if (user?.linkedEmployeeId) {
+    const items = MY_WORKSPACE_NAV.filter((it) => it.moduleId === null || isEnabled(it.moduleId))
+    if (items.length) visibleSections.push({ title: 'My Workspace', items })
+  }
 
   const handleLogout = () => {
     logout()
@@ -83,8 +95,8 @@ export default function Layout() {
             >
               <button
                 onClick={() => setPinned((p) => (p === section.title ? null : section.title))}
-                className={`w-full flex items-center justify-between px-2.5 py-2 rounded-xl nav-liquid text-[11px] font-semibold uppercase tracking-wider ${
-                  isActiveSection ? 'text-brand-300' : 'text-slate-400'
+                className={`w-full flex items-center justify-between px-2.5 py-2 rounded-xl nav-liquid text-xs font-bold uppercase tracking-wider ${
+                  isActiveSection ? 'text-brand-300' : 'text-slate-300'
                 }`}
               >
                 <span>{section.title}</span>
@@ -100,7 +112,7 @@ export default function Layout() {
                     <NavLink
                       key={item.path}
                       to={item.path}
-                      end={item.path === '/'}
+                      end={item.path === '/' || section.items.some((o) => o.path !== item.path && o.path.startsWith(item.path + '/'))}
                       onClick={() => setOpen(false)}
                       className={({ isActive }) => navItemCls(isActive)}
                     >

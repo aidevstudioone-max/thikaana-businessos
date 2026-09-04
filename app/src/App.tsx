@@ -5,7 +5,7 @@ import { ModuleProvider } from './context/ModuleContext'
 import Layout from './components/Layout'
 import PortalLayout from './components/PortalLayout'
 import Gate from './components/Gate'
-import { EMPLOYEE_NAV, PLATFORM_NAV } from './lib/nav'
+import { PLATFORM_NAV } from './lib/nav'
 
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
@@ -74,7 +74,6 @@ import SettingsPage from './pages/admin/Settings'
 import AuditLog from './pages/admin/AuditLog'
 
 // Employee portal
-import EmployeeDashboard from './pages/employee/EmployeeDashboard'
 import MyAttendance from './pages/employee/MyAttendance'
 import MyLeave from './pages/employee/MyLeave'
 import MyPayslips from './pages/employee/MyPayslips'
@@ -145,6 +144,12 @@ function AdminRoutes() {
       <Route path="/forecasting" element={<Gate moduleId="ai_forecasting"><Forecasting /></Gate>} />
       <Route path="/assistant" element={<Gate moduleId="ai_assistant"><Assistant /></Gate>} />
 
+      {/* My Workspace — self-service, for any user linked to an employee record */}
+      <Route path="/me/attendance" element={<Gate moduleId="attendance" selfService><MyAttendance /></Gate>} />
+      <Route path="/me/leave" element={<Gate moduleId="leave" selfService><MyLeave /></Gate>} />
+      <Route path="/me/payslips" element={<Gate moduleId="payroll" selfService><MyPayslips /></Gate>} />
+      <Route path="/me/profile" element={<Gate moduleId="employees" selfService><MyProfile /></Gate>} />
+
       <Route path="/notifications" element={<NotificationsPage />} />
       <Route path="/admin/modules" element={<Modules />} />
       <Route path="/admin/users" element={<Users />} />
@@ -152,19 +157,6 @@ function AdminRoutes() {
       <Route path="/admin/company" element={<CompanyProfile />} />
       <Route path="/admin/settings" element={<SettingsPage />} />
       <Route path="/admin/audit" element={<AuditLog />} />
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Route>
-  )
-}
-
-function EmployeeRoutes() {
-  return (
-    <Route element={<PortalLayout nav={EMPLOYEE_NAV} brand="Employee Self-Service" emoji="🧑‍💼" />}>
-      <Route path="/" element={<EmployeeDashboard />} />
-      <Route path="/me/attendance" element={<Gate moduleId="attendance"><MyAttendance /></Gate>} />
-      <Route path="/me/leave" element={<Gate moduleId="leave"><MyLeave /></Gate>} />
-      <Route path="/me/payslips" element={<Gate moduleId="payroll"><MyPayslips /></Gate>} />
-      <Route path="/me/profile" element={<Gate moduleId="employees"><MyProfile /></Gate>} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Route>
   )
@@ -198,7 +190,7 @@ function AppRoutes() {
           </RequireAuth>
         }
       >
-        {portal === 'PLATFORM' ? PlatformRoutes() : portal === 'EMPLOYEE' ? EmployeeRoutes() : AdminRoutes()}
+        {portal === 'PLATFORM' ? PlatformRoutes() : AdminRoutes()}
       </Route>
     </Routes>
   )

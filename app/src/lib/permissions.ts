@@ -130,12 +130,14 @@ export const DEFAULT_ROLES: Role[] = [
     isSystem: true,
     isSuperAdmin: false,
     portal: 'EMPLOYEE',
-    description: 'Employee self-service — check-in, my attendance, apply for leave and download payslips.',
+    description:
+      'Self-service (check-in, leave, payslips) plus any operational work the owner delegates — by default, updating products and adjusting stock.',
     permissions: permsFor({
-      attendance: viewCreate,
-      leave: viewCreate,
-      payroll: view,
-      employees: view
+      // Work the owner has delegated. Toggle these per company on Roles & Permissions;
+      // self-service (My Workspace) is always available and needs no permission here.
+      inventory: viewCreateEdit,
+      warehouses: view,
+      batch_tracking: view
     })
   }
 ]
