@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import * as Icons from 'lucide-react'
 import { ADMIN_NAV } from '../lib/nav'
 import { useAuth } from '../context/AuthContext'
@@ -7,16 +7,29 @@ import { useModules } from '../context/ModuleContext'
 import { COLLECTIONS, getAll, load } from '../lib/db'
 import type { Company, Notification } from '../lib/types'
 
-function Icon({ name, className }: { name: string; className?: string }) {
+function Icon({ name, className, size = 17 }: { name: string; className?: string; size?: number }) {
   const Cmp = (Icons as any)[name] || Icons.Circle
-  return <Cmp className={className} size={17} strokeWidth={2} />
+  return <Cmp className={className} size={size} strokeWidth={2} />
 }
+
+function itemMatches(path: string, pathname: string) {
+  if (path === '/') return pathname === '/'
+  return pathname === path || pathname.startsWith(path + '/')
+}
+
+const navItemCls = (isActive: boolean) =>
+  `flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-sm nav-liquid ${
+    isActive ? 'nav-liquid-active text-white' : 'text-slate-200 hover:text-white'
+  }`
 
 export default function Layout() {
   const { user, role, logout } = useAuth()
   const { isEnabled } = useModules()
   const navigate = useNavigate()
-  const [open, setOpen] = useState(false)
+  const { pathname } = useLocation()
+  const [open, setOpen] = useState(false) // mobile drawer
+  const [pinned, setPinned] = useState<string | null>(null)
+  const [hovered, setHovered] = useState<string | null>(null)
   const company = load<Company>(COLLECTIONS.company, {} as Company)
   const unread = getAll<Notification>(COLLECTIONS.notifications).filter((n) => !n.read).length
 
@@ -30,44 +43,78 @@ export default function Layout() {
     navigate('/login')
   }
 
+  const sectionActive = (items: { path: string }[]) => items.some((it) => itemMatches(it.path, pathname))
+
   const sidebar = (
     <aside className="w-64 shrink-0 bg-slate-900 text-slate-200 flex flex-col h-full">
       <div className="h-14 flex items-center gap-2 px-4 border-b border-slate-800 shrink-0">
         <span className="text-xl">🧩</span>
         <span className="font-bold text-white text-sm leading-tight">Thikaana BusinessOS</span>
       </div>
-      <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-4">
-        {visibleSections.map((section, i) => (
-          <div key={i}>
-            {section.title && (
-              <p className="px-2 text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-1">
-                {section.title}
-              </p>
-            )}
-            <div className="space-y-0.5">
-              {section.items.map((item) => (
-                <NavLink
-                  key={item.path}
-                  to={item.path}
-                  end={item.path === '/'}
-                  onClick={() => setOpen(false)}
-                  className={({ isActive }) =>
-                    `flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm transition-colors ${
-                      isActive ? 'bg-brand-600 text-white' : 'text-slate-300 hover:bg-slate-800'
-                    }`
-                  }
-                >
-                  <Icon name={item.icon} />
-                  <span className="truncate">{item.label}</span>
-                </NavLink>
-              ))}
+      <nav className="flex-1 overflow-y-auto py-3 px-2.5 space-y-1.5">
+        {visibleSections.map((section, i) => {
+          if (!section.title) {
+            return (
+              <div key={i} className="space-y-1">
+                {section.items.map((item) => (
+                  <NavLink
+                    key={item.path}
+                    to={item.path}
+                    end={item.path === '/'}
+                    onClick={() => setOpen(false)}
+                    className={({ isActive }) => navItemCls(isActive)}
+                  >
+                    <Icon name={item.icon} />
+                    <span className="truncate">{item.label}</span>
+                  </NavLink>
+                ))}
+              </div>
+            )
+          }
+
+          const isActiveSection = sectionActive(section.items)
+          const expanded = hovered === section.title || pinned === section.title || isActiveSection
+
+          return (
+            <div
+              key={i}
+              onMouseEnter={() => setHovered(section.title)}
+              onMouseLeave={() => setHovered((h) => (h === section.title ? null : h))}
+            >
+              <button
+                onClick={() => setPinned((p) => (p === section.title ? null : section.title))}
+                className={`w-full flex items-center justify-between px-2.5 py-2 rounded-xl nav-liquid text-[11px] font-semibold uppercase tracking-wider ${
+                  isActiveSection ? 'text-brand-300' : 'text-slate-400'
+                }`}
+              >
+                <span>{section.title}</span>
+                <Icon
+                  name="ChevronDown"
+                  size={13}
+                  className={`transition-transform duration-300 ${expanded ? 'rotate-180' : ''}`}
+                />
+              </button>
+              {expanded && (
+                <div className="space-y-1 pt-1 pl-1" style={{ animation: 'popUp .18s ease both' }}>
+                  {section.items.map((item) => (
+                    <NavLink
+                      key={item.path}
+                      to={item.path}
+                      end={item.path === '/'}
+                      onClick={() => setOpen(false)}
+                      className={({ isActive }) => navItemCls(isActive)}
+                    >
+                      <Icon name={item.icon} size={16} />
+                      <span className="truncate">{item.label}</span>
+                    </NavLink>
+                  ))}
+                </div>
+              )}
             </div>
-          </div>
-        ))}
+          )
+        })}
       </nav>
-      <div className="px-3 py-2 border-t border-slate-800 text-[11px] text-slate-500">
-        Demo data · no live database
-      </div>
+      <div className="px-3 py-2 border-t border-slate-800 text-[11px] text-slate-500">Demo data · no live database</div>
     </aside>
   )
 

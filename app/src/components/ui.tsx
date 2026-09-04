@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { initials } from '../lib/format'
 
 export {
@@ -302,11 +302,17 @@ export function ProgressBar({
     amber: 'bg-amber-500',
     red: 'bg-red-500'
   }
+  const target = Math.max(0, Math.min(100, value))
+  const [w, setW] = useState(0)
+  useEffect(() => {
+    const t = requestAnimationFrame(() => setW(target))
+    return () => cancelAnimationFrame(t)
+  }, [target])
   return (
     <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
       <div
-        className={`h-full rounded-full ${bar[tone]}`}
-        style={{ width: `${Math.max(0, Math.min(100, value))}%` }}
+        className={`h-full rounded-full ${bar[tone]} transition-[width] duration-700 ease-out`}
+        style={{ width: `${w}%` }}
       />
     </div>
   )
@@ -398,24 +404,44 @@ export function BarChart({
   format?: (n: number) => string
 }) {
   const max = Math.max(1, ...data.map((d) => d.value))
-  const bar: Record<string, string> = {
-    brand: 'bg-brand-500',
-    blue: 'bg-blue-500',
-    amber: 'bg-amber-500'
+  const palette: Record<string, [string, string]> = {
+    brand: ['#34d399', '#059669'],
+    blue: ['#60a5fa', '#2563eb'],
+    amber: ['#fbbf24', '#d97706']
   }
+  const [top, bot] = palette[tone]
+  const plot = height - 40
+
   return (
-    <div className="flex items-end gap-1.5 sm:gap-2" style={{ height }}>
-      {data.map((d, i) => (
-        <div key={i} className="flex-1 flex flex-col items-center justify-end gap-1 min-w-0">
-          <span className="text-[10px] text-slate-400 tabular-nums">{format(d.value)}</span>
-          <div
-            className={`w-full rounded-t ${bar[tone]} transition-all`}
-            style={{ height: `${(d.value / max) * (height - 34)}px` }}
-            title={`${d.label}: ${format(d.value)}`}
-          />
-          <span className="text-[10px] text-slate-500 truncate w-full text-center">{d.label}</span>
-        </div>
-      ))}
+    <div className="relative" style={{ height }}>
+      <div className="absolute left-0 right-0 pointer-events-none" style={{ top: 16, bottom: 20 }}>
+        {[0, 1, 2, 3].map((k) => (
+          <div key={k} className="absolute left-0 right-0 border-t border-slate-200/70" style={{ top: `${k * 33.34}%` }} />
+        ))}
+      </div>
+      <div className="relative flex items-end gap-1.5 sm:gap-2 h-full">
+        {data.map((d, i) => (
+          <div key={i} className="flex-1 min-w-0 h-full flex flex-col items-center justify-end gap-1 group/bar">
+            <span
+              className="text-[10px] text-slate-400 tabular-nums whitespace-nowrap"
+              style={{ animation: 'popUp .4s ease both', animationDelay: `${i * 45 + 260}ms` }}
+            >
+              {format(d.value)}
+            </span>
+            <div
+              className="w-full transition-transform duration-200 group-hover/bar:-translate-y-1"
+              style={{ height: `${Math.max(2, (d.value / max) * plot)}px` }}
+            >
+              <div
+                className="bar3d w-full h-full group-hover/bar:brightness-110"
+                style={{ ['--c-top' as string]: top, ['--c-bot' as string]: bot, animationDelay: `${i * 45}ms` }}
+                title={`${d.label}: ${format(d.value)}`}
+              />
+            </div>
+            <span className="text-[10px] text-slate-500 truncate w-full text-center">{d.label}</span>
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
@@ -444,7 +470,16 @@ export function Sparkline({
     .join(' ')
   return (
     <svg width={width} height={height} className="overflow-visible">
-      <polyline points={pts} fill="none" stroke={stroke} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+      <polyline
+        points={pts}
+        fill="none"
+        stroke={stroke}
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        pathLength={1}
+        style={{ strokeDasharray: 1, strokeDashoffset: 1, animation: 'drawIn 1s ease forwards' }}
+      />
     </svg>
   )
 }
@@ -474,10 +509,12 @@ export function DonutChart({
     return { d: `M ${cx} ${cy} L ${x1} ${y1} A ${r} ${r} 0 ${large} 1 ${x2} ${y2} Z`, color: seg.color }
   })
   return (
-    <svg width={size} height={size}>
-      {arcs.map((a, i) => (
-        <path key={i} d={a.d} fill={a.color} />
-      ))}
+    <svg width={size} height={size} className="overflow-visible">
+      <g style={{ animation: 'donutSpin .8s cubic-bezier(.22,.85,.25,1) both', transformOrigin: `${cx}px ${cy}px` }}>
+        {arcs.map((a, i) => (
+          <path key={i} d={a.d} fill={a.color} stroke="white" strokeWidth={2} />
+        ))}
+      </g>
       <circle cx={cx} cy={cy} r={r * 0.58} fill="white" />
     </svg>
   )

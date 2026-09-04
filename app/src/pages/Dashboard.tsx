@@ -65,19 +65,21 @@ export default function Dashboard() {
       </div>
 
       <div className="grid lg:grid-cols-3 gap-4 mb-4">
-        <Card className="p-4 lg:col-span-2">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="font-semibold text-slate-800">Revenue — last 12 months</h3>
-            <Link to="/analytics" className="text-xs text-brand-600 hover:underline">
-              Open analytics →
-            </Link>
-          </div>
-          <BarChart
-            data={ms.map((m) => ({ label: monthLabel(m.month), value: Math.round(m.revenue) }))}
-            format={(n) => currencyK(n)}
-            height={180}
-          />
-        </Card>
+        <Link to="/analytics" className="lg:col-span-2 group block">
+          <Card className="p-4 h-full transition-all group-hover:shadow-md group-hover:ring-1 group-hover:ring-brand-200">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-semibold text-slate-800">Revenue — last 12 months</h3>
+              <span className="text-xs text-brand-600 group-hover:underline inline-flex items-center gap-0.5">
+                Open analytics <span className="transition-transform group-hover:translate-x-0.5">→</span>
+              </span>
+            </div>
+            <BarChart
+              data={ms.map((m) => ({ label: monthLabel(m.month), value: Math.round(m.revenue) }))}
+              format={(n) => currencyK(n)}
+              height={180}
+            />
+          </Card>
+        </Link>
 
         <Card className="p-4">
           <h3 className="font-semibold text-slate-800 mb-1">Inventory health</h3>
