@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import * as Icons from 'lucide-react'
 import { ADMIN_NAV, MY_WORKSPACE_NAV, type NavSection } from '../lib/nav'
@@ -17,9 +17,13 @@ function itemMatches(path: string, pathname: string) {
   return pathname === path || pathname.startsWith(path + '/')
 }
 
-const navItemCls = (isActive: boolean) =>
+const navItemCls = (isActive: boolean, muted = false) =>
   `flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-sm nav-liquid ${
-    isActive ? 'nav-liquid-active text-white' : 'text-slate-200 hover:text-white'
+    isActive
+      ? 'nav-liquid-active text-white'
+      : muted
+      ? 'text-slate-400 hover:text-slate-100'
+      : 'text-slate-200 hover:text-white'
   }`
 
 export default function Layout() {
@@ -28,8 +32,6 @@ export default function Layout() {
   const navigate = useNavigate()
   const { pathname } = useLocation()
   const [open, setOpen] = useState(false) // mobile drawer
-  const [pinned, setPinned] = useState<string | null>(null)
-  const [hovered, setHovered] = useState<string | null>(null)
   const company = load<Company>(COLLECTIONS.company, {} as Company)
   const unread = getAll<Notification>(COLLECTIONS.notifications).filter((n) => !n.read).length
 
@@ -56,6 +58,29 @@ export default function Layout() {
   }
 
   const sectionActive = (items: { path: string }[]) => items.some((it) => itemMatches(it.path, pathname))
+
+  // Exclusive accordion: whichever section holds the current route opens by default;
+  // opening any section (by click) closes every other one, since only one title is ever tracked.
+  const activeSectionTitle = visibleSections.find((s) => s.title && sectionActive(s.items))?.title ?? null
+  const [openSection, setOpenSection] = useState<string | null>(activeSectionTitle)
+  const [manuallyClosed, setManuallyClosed] = useState(false)
+
+  useEffect(() => {
+    setOpenSection(activeSectionTitle)
+    setManuallyClosed(false)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname])
+
+  const isExpanded = (title: string) => !manuallyClosed && openSection === title
+
+  const toggleSection = (title: string) => {
+    if (isExpanded(title)) {
+      setManuallyClosed(true)
+    } else {
+      setOpenSection(title)
+      setManuallyClosed(false)
+    }
+  }
 
   const sidebar = (
     <aside className="w-64 shrink-0 bg-slate-900 text-slate-200 flex flex-col h-full">
@@ -85,18 +110,14 @@ export default function Layout() {
           }
 
           const isActiveSection = sectionActive(section.items)
-          const expanded = hovered === section.title || pinned === section.title || isActiveSection
+          const expanded = isExpanded(section.title)
 
           return (
-            <div
-              key={i}
-              onMouseEnter={() => setHovered(section.title)}
-              onMouseLeave={() => setHovered((h) => (h === section.title ? null : h))}
-            >
+            <div key={i}>
               <button
-                onClick={() => setPinned((p) => (p === section.title ? null : section.title))}
-                className={`w-full flex items-center justify-between px-2.5 py-2 rounded-xl nav-liquid text-xs font-bold uppercase tracking-wider ${
-                  isActiveSection ? 'text-brand-300' : 'text-slate-300'
+                onClick={() => toggleSection(section.title)}
+                className={`w-full flex items-center justify-between px-2.5 py-2 rounded-xl nav-liquid text-xs font-extrabold uppercase tracking-wider ${
+                  expanded || isActiveSection ? 'text-brand-300' : 'text-brand-400'
                 }`}
               >
                 <span>{section.title}</span>
@@ -114,7 +135,7 @@ export default function Layout() {
                       to={item.path}
                       end={item.path === '/' || section.items.some((o) => o.path !== item.path && o.path.startsWith(item.path + '/'))}
                       onClick={() => setOpen(false)}
-                      className={({ isActive }) => navItemCls(isActive)}
+                      className={({ isActive }) => navItemCls(isActive, true)}
                     >
                       <Icon name={item.icon} size={16} />
                       <span className="truncate">{item.label}</span>
